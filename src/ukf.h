@@ -62,6 +62,9 @@ class UKF {
    */
   void UpdateLidar(MeasurementPackage meas_package);
 
+  /**
+   * Updates the state and the state covariance matrix using prediction in measurement space
+   */
   void UpdateLidarMeanAndCovar(MeasurementPackage meas_package, int n_z, MatrixXd Zsig, VectorXd z_pred, MatrixXd S);
 
   /**
@@ -70,6 +73,9 @@ class UKF {
    */
   void UpdateRadar(MeasurementPackage meas_package);
 
+  /**
+   * Updates the state and the state covariance matrix using prediction in measurement space
+   */
   void UpdateRadarMeanAndCovar(MeasurementPackage meas_package, int n_z, MatrixXd Zsig, VectorXd z_pred, MatrixXd S);
 
   // initially set to false, set to true in first call of ProcessMeasurement
