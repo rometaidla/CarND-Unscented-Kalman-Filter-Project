@@ -213,10 +213,7 @@ void UKF::PredictMeanAndCovar() {
   for (int i = 0; i < 2 * n_aug_ + 1; ++i) {  // iterate over sigma points
     // state difference
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
-    // angle normalization
-    while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
-    while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
-
+    NormalizeAngles(x_diff, 3);
     P_ = P_ + weights_(i) * x_diff * x_diff.transpose() ;
   }
 }
@@ -324,11 +321,7 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   for (int i = 0; i < 2 * n_aug_ + 1; ++i) {  // 2n+1 simga points
     // residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
-
-    // angle normalization
-    while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
-    while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
-
+    NormalizeAngles(z_diff, 1);
     S = S + weights_(i) * z_diff * z_diff.transpose();
   }
 
@@ -353,15 +346,11 @@ void UKF::UpdateRadarMeanAndCovar(MeasurementPackage meas_package, int n_z, Matr
   for (int i = 0; i < 2 * n_aug_ + 1; ++i) {  // 2n+1 simga points
     // residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
-    // angle normalization
-    while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
-    while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
+    NormalizeAngles(z_diff, 1);
 
     // state difference
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
-    // angle normalization
-    while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
-    while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
+    NormalizeAngles(x_diff, 3);
 
     Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
   }
@@ -371,12 +360,14 @@ void UKF::UpdateRadarMeanAndCovar(MeasurementPackage meas_package, int n_z, Matr
 
   // residual
   VectorXd z_diff = z - z_pred;
-
-  // angle normalization
-  while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
-  while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
+  NormalizeAngles(z_diff, 1);
 
   // update state mean and covariance matrix
   x_ = x_ + K * z_diff;
   P_ = P_ - K*S*K.transpose(); 
+}
+
+void UKF::NormalizeAngles(VectorXd angles, int index) {
+    while (angles(index)> M_PI) angles(index)-=2.*M_PI;
+    while (angles(index)<-M_PI) angles(index)+=2.*M_PI;
 }

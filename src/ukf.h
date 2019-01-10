@@ -78,6 +78,13 @@ class UKF {
    */
   void UpdateRadarMeanAndCovar(MeasurementPackage meas_package, int n_z, MatrixXd Zsig, VectorXd z_pred, MatrixXd S);
 
+  /**
+   * Normalizes angles 2 pii range
+   * @param angles Angles to normalise
+   * @param index Index of angle to normalise
+   */
+  void NormalizeAngles(VectorXd angles, int index);
+
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 
