@@ -74,56 +74,17 @@ UKF::UKF() {
 UKF::~UKF() {}
 
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
-  /*****************************************************************************
-   *  Initialization
-   ****************************************************************************/
   if (!is_initialized_) {
-    if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
-      cout << "initializing with RADAR" << endl;
-      double rho = meas_package.raw_measurements_[0];
-      double phi = meas_package.raw_measurements_[1];
-      double rho_dot = meas_package.raw_measurements_[2];
-      
-      double x = rho * cos(phi);
-      if ( x < 0.0001 ) {
-        x = 0.0001;
-      }
-      
-      double y = rho * sin(phi);
-      if ( y < 0.0001 ) {
-        y = 0.0001;
-      }
-      
-      double vx = rho_dot * cos(phi);
-      double vy = rho_dot * sin(phi);
-      double v = sqrt(vx*vx + vy*vy);
-
-      x_ << x, y, v, 0, 0;
-    }
-    else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
-      cout << "initializing with LASER" << endl;
-      x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
-    }
-
-    time_us_ = meas_package.timestamp_;
-
-    // done initializing, no need to predict or update
-    is_initialized_ = true;
-    cout << "initialized" << endl;
+    Initialize(meas_package);
     return;
   }
 
-  /*****************************************************************************
-   *  Prediction
-   ****************************************************************************/
+  
   double delta_t = (meas_package.timestamp_ - time_us_) / 1000000.0;
   time_us_ = meas_package.timestamp_;
 
   Prediction(delta_t);
 
-  /*****************************************************************************
-   *  Update
-   ****************************************************************************/
   if (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_) {
     UpdateRadar(meas_package);
   }
@@ -132,9 +93,48 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   }
 }
 
+void UKF::Initialize(MeasurementPackage meas_package) {
+  if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
+    cout << "initializing with RADAR" << endl;
+    double rho = meas_package.raw_measurements_[0];
+    double phi = meas_package.raw_measurements_[1];
+    double rho_dot = meas_package.raw_measurements_[2];
+    
+    double x = rho * cos(phi);
+    if ( x < 0.0001 ) {
+      x = 0.0001;
+    }
+    
+    double y = rho * sin(phi);
+    if ( y < 0.0001 ) {
+      y = 0.0001;
+    }
+    
+    double vx = rho_dot * cos(phi);
+    double vy = rho_dot * sin(phi);
+    double v = sqrt(vx*vx + vy*vy);
+
+    x_ << x, y, v, 0, 0;
+  }
+  else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
+    cout << "initializing with LASER" << endl;
+    x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
+  }
+
+  time_us_ = meas_package.timestamp_;
+
+  // done initializing, no need to predict or update
+  is_initialized_ = true;
+  cout << "initialized" << endl;  
+}
+
 void UKF::Prediction(double delta_t) {
-  // 1. create augmented sigma points
-  // create augmented mean vector
+  MatrixXd Xsig_aug = CreateSigmaPoints();
+  PredictSigmaPoints(Xsig_aug, delta_t);
+  PredictMeanAndCovar();  
+}
+
+MatrixXd UKF::CreateSigmaPoints() {
   VectorXd x_aug = VectorXd(n_aug_);
   x_aug.head(5) = x_;
   x_aug(5) = 0;
@@ -154,8 +154,10 @@ void UKF::Prediction(double delta_t) {
     Xsig_aug.col(i+1)       = x_aug + sqrt(lambda_+n_aug_) * L.col(i);
     Xsig_aug.col(i+1+n_aug_) = x_aug - sqrt(lambda_+n_aug_) * L.col(i);
   }
+  return Xsig_aug; 
+}
 
-  // 2. predict sigma points: lesson 7, section 21: sigma point prediction assigment 2
+void UKF::PredictSigmaPoints(MatrixXd Xsig_aug, double delta_t) {
   for (int i = 0; i< n_sig_; i++) {
     // extract values for better readability
     double p_x = Xsig_aug(0,i);
@@ -197,8 +199,9 @@ void UKF::Prediction(double delta_t) {
     Xsig_pred_(3,i) = yaw_p;
     Xsig_pred_(4,i) = yawd_p;
   }
+}
 
-  // 3. predict mean and covariance
+void UKF::PredictMeanAndCovar() {
   // predicted state mean
   x_.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; ++i) {  // iterate over sigma points

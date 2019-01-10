@@ -4,6 +4,9 @@
 #include "Eigen/Dense"
 #include "measurement_package.h"
 
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
+
 class UKF {
  public:
   /**
@@ -23,11 +26,35 @@ class UKF {
   void ProcessMeasurement(MeasurementPackage meas_package);
 
   /**
+   * Initializes UKF with lidar or radar measurement
+   * @param meas_package The latest measurement data of either radar or laser
+   */
+  void Initialize(MeasurementPackage meas_package);
+
+  /**
    * Prediction Predicts sigma points, the state, and the state covariance
    * matrix
    * @param delta_t Time between k and k+1 in s
    */
   void Prediction(double delta_t);
+
+  /**
+   * Creates sigma points
+   */
+  MatrixXd CreateSigmaPoints();
+
+  /**
+   * Prediction sigma points
+   *
+   * @param Xsig_aug Sigma points to predict
+   * @param delta_t Time between k and k+1 in s
+   */
+  void PredictSigmaPoints(MatrixXd Xsig_aug, double delta_t);
+
+  /**
+   * Predicts the state mean and the state covariance matrix
+   */
+  void PredictMeanAndCovar();
 
   /**
    * Updates the state and the state covariance matrix using a laser measurement
@@ -40,7 +67,6 @@ class UKF {
    * @param meas_package The measurement at k+1
    */
   void UpdateRadar(MeasurementPackage meas_package);
-
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
