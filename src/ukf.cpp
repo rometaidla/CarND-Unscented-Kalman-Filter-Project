@@ -259,8 +259,10 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
         0, std_laspy_*std_laspy_;
   S = S + R;
 
-  // 2. Update
-  // measurements from lidar
+  UpdateLidarMeanAndCovar(meas_package, n_z, Zsig, z_pred, S);
+}
+
+void UKF::UpdateLidarMeanAndCovar(MeasurementPackage meas_package, int n_z, MatrixXd Zsig, VectorXd z_pred, MatrixXd S) {
   VectorXd z = meas_package.raw_measurements_;
   // create matrix for cross correlation Tc
   MatrixXd Tc = MatrixXd(n_x_, n_z);
@@ -285,6 +287,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   x_ = x_ + K * z_diff;
   P_ = P_ - K*S*K.transpose();
 }
+
 
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
   // create matrix for sigma points in measurement space
@@ -330,15 +333,17 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   }
 
   // add measurement noise covariance matrix
-  MatrixXd R = MatrixXd(n_z,n_z);
+  MatrixXd R = MatrixXd(n_z, n_z);
   R <<  std_radr_*std_radr_, 0, 0,
         0, std_radphi_*std_radphi_, 0,
         0, 0, std_radrd_*std_radrd_;
   S = S + R;
 
 
-  // 2. Update
-  // measurements from radar
+  UpdateRadarMeanAndCovar(meas_package, n_z, Zsig, z_pred, S);
+}
+
+void UKF::UpdateRadarMeanAndCovar(MeasurementPackage meas_package, int n_z, MatrixXd Zsig, VectorXd z_pred, MatrixXd S) {
   VectorXd z = meas_package.raw_measurements_;
   // create matrix for cross correlation Tc
   MatrixXd Tc = MatrixXd(n_x_, n_z);
@@ -373,5 +378,5 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   // update state mean and covariance matrix
   x_ = x_ + K * z_diff;
-  P_ = P_ - K*S*K.transpose();
+  P_ = P_ - K*S*K.transpose(); 
 }

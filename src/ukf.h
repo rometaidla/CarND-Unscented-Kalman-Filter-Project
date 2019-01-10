@@ -62,11 +62,15 @@ class UKF {
    */
   void UpdateLidar(MeasurementPackage meas_package);
 
+  void UpdateLidarMeanAndCovar(MeasurementPackage meas_package, int n_z, MatrixXd Zsig, VectorXd z_pred, MatrixXd S);
+
   /**
    * Updates the state and the state covariance matrix using a radar measurement
    * @param meas_package The measurement at k+1
    */
   void UpdateRadar(MeasurementPackage meas_package);
+
+  void UpdateRadarMeanAndCovar(MeasurementPackage meas_package, int n_z, MatrixXd Zsig, VectorXd z_pred, MatrixXd S);
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
